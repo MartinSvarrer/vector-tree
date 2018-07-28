@@ -1,5 +1,7 @@
 import { throttle } from './throttle.js';
 import { TreeDrawer } from './tree.js';
+import { animate } from './animate.js';
+import { easeInOutCubic, easeInCubic, easeOutCubic } from "./easing.js";
 
 /**
 * @type {HTMLCanvasElement}
@@ -64,12 +66,31 @@ function onMouseMove(evt) {
   const mouseX = evt.clientX - canvas.offsetLeft - canvas.width / 2;
   const forceX = mouseX / canvas.width * 2 * 15;
 
-  const treeClone = JSON.parse(JSON.stringify(tree1));
+  draw(tree1, forceX, forceY);
+}
+
+function breezeAnimate(treeData) {
+  // Generate force from -15 to 15
+  const forceX = Math.round(Math.random() * 30 - 15);
+  let latestTreeState = treeData;
+  animate({
+    easing: easeInOutCubic,
+    length: 600,
+    fps: 30,
+    draw: (a) => latestTreeState = draw(treeData, forceX * a),
+    done: () => breezeAnimate(latestTreeState),
+  });
+}
+
+function draw(treeData, forceX = 1, forceY = 1) {
+  const treeClone = JSON.parse(JSON.stringify(treeData));
   applyForceToDataBranch(treeClone, forceX, forceY);
 
   clearCanvas();
   tree.drawDataTree(treeClone);
+  return treeClone;
 }
 
-tree.drawDataTree(tree1);
-canvas.addEventListener('mousemove', throttle(onMouseMove, 100));
+tree.drawDataTree(tree1); // Initial draw
+breezeAnimate(tree1); // Start animation!
+//canvas.addEventListener('mousemove', throttle(onMouseMove, 100));
